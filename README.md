@@ -12,27 +12,6 @@
 - 반응형 UI (Tailwind CSS)
 - 토스트 알림 시스템
 
-## 환경 변수 설정
-
-프로젝트 루트 디렉토리에 `.env.local` 파일을 생성하고 다음 환경 변수를 설정하세요:
-
-```bash
-# API 설정
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
-NEXT_PUBLIC_API_TIMEOUT=10000
-
-# 개발 환경 설정
-NODE_ENV=development
-PORT=3000
-```
-
-### 환경 변수 설명
-
-- `NEXT_PUBLIC_API_BASE_URL`: 백엔드 API 서버의 기본 URL
-- `NEXT_PUBLIC_API_TIMEOUT`: API 요청 타임아웃 (밀리초)
-- `NODE_ENV`: 실행 환경 (development/production)
-- `PORT`: Next.js 서버 포트 (기본값: 3000)
-
 ## Getting Started
 
 1. 의존성 설치:
@@ -40,17 +19,12 @@ PORT=3000
 npm install
 ```
 
-2. 환경 변수 설정:
-```bash
-# .env.local 파일 생성 및 설정
-```
-
-3. 개발 서버 실행:
+2. 개발 서버 실행:
 ```bash
 npm run dev
 ```
 
-4. 브라우저에서 [http://localhost:3000](http://localhost:3000) 열기
+3. 브라우저에서 [http://localhost:3000](http://localhost:3000) 열기
 
 ## 프로젝트 구조
 
@@ -63,7 +37,6 @@ board/
 │   ├── write/         # 게시글 작성 페이지
 │   ├── edit/          # 게시글 수정 페이지
 │   └── signup/        # 회원가입 페이지
-├── .env.local         # 환경 변수 (생성 필요)
 └── package.json
 ```
 
