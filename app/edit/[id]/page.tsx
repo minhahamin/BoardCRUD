@@ -93,7 +93,7 @@ export default function EditPostPage({ params }: PageProps) {
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     fetchPost();
-  }, [params.id, router]);
+  }, [params.id, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 폼 입력 처리
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

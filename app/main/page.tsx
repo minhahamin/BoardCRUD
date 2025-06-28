@@ -14,9 +14,6 @@ interface Post {
 
 const PAGE_SIZE = 5;
 
-// API 기본 URL 설정
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
-
 export default function BoardMainPage() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
@@ -91,7 +88,7 @@ export default function BoardMainPage() {
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 사용자 정보 로드
   useEffect(() => {
