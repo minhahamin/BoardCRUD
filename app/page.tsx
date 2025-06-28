@@ -3,8 +3,11 @@
 import { useState } from "react"; 
 import { useRouter } from "next/navigation";
 
+// API 기본 URL 설정
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+
 export default function LoginPage() {
-  const [id, setID] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [notification, setNotification] = useState<{
     show: boolean;
@@ -33,38 +36,52 @@ export default function LoginPage() {
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-  console.log("로그인 시도 시작:", { id, password });
+
+  if (!username.trim() || !password.trim()) {
+    showNotification("사용자명과 비밀번호를 입력해주세요.", "warning");
+    return;
+  }
 
   try {
-    const response = await fetch("http://localhost:3000/users/login", {
+    const response = await fetch(`${API_BASE_URL}/users/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: id, password }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: username.trim(),
+        password: password,
+      }),
     });
-    console.log("응답 status:", response.status);
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error("로그인 실패 응답:", errorData);
-      showNotification("로그인 실패: " + (errorData.message || "알 수 없는 오류"), "error");
-      return;
+      const errorData = await response.json().catch(() => ({}));
+      
+      if (response.status === 401) {
+        showNotification("사용자명 또는 비밀번호가 올바르지 않습니다.", "error");
+        return;
+      }
+      
+      throw new Error(errorData.message || "로그인에 실패했습니다.");
     }
 
     const data = await response.json();
-    console.log("로그인 성공 데이터:", data);
+    console.log("로그인 성공:", data);
 
+    // JWT 토큰과 사용자명을 로컬 스토리지에 저장
     localStorage.setItem("token", data.token);
-    localStorage.setItem("username", data.user.username);
+    localStorage.setItem("username", username.trim());
 
-    showNotification("로그인에 성공했습니다!", "success");
-    
-    // 알림창이 표시될 시간을 주기 위해 1.5초 후 페이지 이동
+    showNotification("로그인 성공! 메인 페이지로 이동합니다.", "success");
+
+    // 성공 후 메인 페이지로 이동
     setTimeout(() => {
       router.push("/main");
     }, 1500);
+
   } catch (error) {
-    console.error("로그인 중 네트워크 오류:", error);
-    showNotification("네트워크 오류가 발생했습니다.", "error");
+    console.error("로그인 에러:", error);
+    showNotification(error instanceof Error ? error.message : "로그인 중 오류가 발생했습니다.", "error");
   }
 };
 
@@ -89,8 +106,8 @@ const handleSubmit = async (e: React.FormEvent) => {
             <input
               type="text"
               className="w-full px-4 py-2 border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 transition"
-              value={id}
-              onChange={(e) => setID(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>

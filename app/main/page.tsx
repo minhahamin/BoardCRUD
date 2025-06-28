@@ -14,6 +14,9 @@ interface Post {
 
 const PAGE_SIZE = 5;
 
+// API 기본 URL 설정
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+
 export default function BoardMainPage() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,7 +51,7 @@ export default function BoardMainPage() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('http://localhost:3000/writes', {
+      const response = await fetch('/api/posts', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -149,7 +152,7 @@ export default function BoardMainPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/writes/${postId}`, {
+      const response = await fetch(`/api/posts/${postId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+// API 기본 URL 설정
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+
 export default function WritePage() {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [notification, setNotification] = useState<{
@@ -15,7 +19,6 @@ export default function WritePage() {
     message: '',
     type: 'info'
   });
-  const router = useRouter();
 
   // 알림창 표시 함수
   const showNotification = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
@@ -31,42 +34,68 @@ export default function WritePage() {
     }, 4000);
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-
-  try {
-    const token = localStorage.getItem("token"); // 로그인 시 저장한 JWT 토큰 가져오기
-    if (!token) {
-      showNotification("로그인 후 작성할 수 있습니다.", "error");
-      return;
+  // JWT 토큰 가져오기
+  const getAuthToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('token');
     }
+    return null;
+  };
 
-    const response = await fetch("http://localhost:3000/writes", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // 토큰 인증 헤더 추가
-      },
-      body: JSON.stringify({ title, content }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      showNotification(`작성 실패: ${errorData.message || "알 수 없는 오류"}`, "error");
-      return;
-    }
-
-    showNotification("글이 성공적으로 작성되었습니다!", "success");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    // 알림창이 표시될 시간을 주기 위해 1.5초 후 페이지 이동
-    setTimeout(() => {
-      router.push("/main");
-    }, 1500);
-  } catch (error) {
-    console.error("글 작성 중 오류 발생:", error);
-    showNotification("네트워크 오류가 발생했습니다.", "error");
-  }
-};
+    const token = getAuthToken();
+    
+    if (!token) {
+      showNotification('로그인이 필요합니다.', 'error');
+      return;
+    }
+
+    if (!title.trim() || !content.trim()) {
+      showNotification('제목과 내용을 모두 입력해주세요.', 'warning');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/writes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          content: content.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (response.status === 401) {
+          showNotification('로그인이 필요합니다.', 'error');
+          return;
+        }
+        
+        throw new Error(errorData.message || '게시글 작성에 실패했습니다.');
+      }
+
+      const data = await response.json();
+      console.log("게시글 작성 성공:", data);
+      
+      showNotification('게시글이 성공적으로 작성되었습니다.', 'success');
+      
+      // 성공 후 메인 페이지로 이동
+      setTimeout(() => {
+        router.push("/main");
+      }, 1500);
+      
+    } catch (error) {
+      console.error("게시글 작성 에러:", error);
+      showNotification(error instanceof Error ? error.message : '게시글 작성 중 오류가 발생했습니다.', 'error');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-pink-50 py-10 px-4">

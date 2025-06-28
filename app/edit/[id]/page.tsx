@@ -3,6 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+// API 기본 URL 설정
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+
 interface PageProps {
   params: {
     id: string;
@@ -54,7 +57,7 @@ export default function EditPostPage({ params }: PageProps) {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`http://localhost:3000/writes/${params.id}`, {
+      const response = await fetch(`${API_BASE_URL}/writes/${params.id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -64,6 +67,7 @@ export default function EditPostPage({ params }: PageProps) {
       if (!response.ok) {
         if (response.status === 404) {
           setError('게시글을 찾을 수 없습니다.');
+          setTimeout(() => router.push('/main'), 2000);
           return;
         }
         throw new Error('게시글을 불러오는데 실패했습니다.');
@@ -80,6 +84,7 @@ export default function EditPostPage({ params }: PageProps) {
     } catch (err) {
       console.error('게시글 조회 에러:', err);
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+      setTimeout(() => router.push('/main'), 2000);
     } finally {
       setLoading(false);
     }
@@ -88,7 +93,7 @@ export default function EditPostPage({ params }: PageProps) {
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     fetchPost();
-  }, [params.id]);
+  }, [params.id, router]);
 
   // 폼 입력 처리
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -103,20 +108,15 @@ export default function EditPostPage({ params }: PageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title.trim()) {
-      showNotification('제목을 입력해주세요.', 'error');
-      return;
-    }
+    const token = getAuthToken();
     
-    if (!formData.content.trim()) {
-      showNotification('내용을 입력해주세요.', 'error');
+    if (!token) {
+      showNotification('로그인이 필요합니다.', 'error');
       return;
     }
 
-    // JWT 토큰 확인
-    const token = getAuthToken();
-    if (!token) {
-      showNotification('로그인이 필요합니다.', 'error');
+    if (!formData.title.trim() || !formData.content.trim()) {
+      showNotification('제목과 내용을 모두 입력해주세요.', 'warning');
       return;
     }
 
@@ -124,7 +124,7 @@ export default function EditPostPage({ params }: PageProps) {
       setSaving(true);
       setError(null);
       
-      const response = await fetch(`http://localhost:3000/writes/${params.id}`, {
+      const response = await fetch(`${API_BASE_URL}/writes/${params.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -151,20 +151,21 @@ export default function EditPostPage({ params }: PageProps) {
           return;
         }
         
-        showNotification(errorData.message || '게시글 수정에 실패했습니다.', 'error');
-        return;
+        throw new Error(errorData.message || '게시글 수정에 실패했습니다.');
       }
 
-      // 수정 성공 시 알림창 표시 후 상세 페이지로 이동
+      const data = await response.json();
+      console.log('게시글 수정 성공:', data);
+      
       showNotification('게시글이 성공적으로 수정되었습니다.', 'success');
       
-      // 알림창이 표시될 시간을 주기 위해 1.5초 후 페이지 이동
+      // 성공 후 상세 페이지로 이동
       setTimeout(() => {
         router.push(`/posts/${params.id}`);
       }, 1500);
     } catch (err) {
       console.error('게시글 수정 에러:', err);
-      showNotification(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.', 'error');
+      showNotification(err instanceof Error ? err.message : '게시글 수정 중 오류가 발생했습니다.', 'error');
     } finally {
       setSaving(false);
     }
